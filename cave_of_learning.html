@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cave of Learning — A Philosophical Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<!-- All editable text lives in game_content.js — edit that file and refresh -->
+<script src="game_content.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #080818;
+  --surface: rgba(0,0,0,0.6);
+  --text: #e8d5a0;
+  --dim: #5a4e32;
+  --gold: #ffd700;
+  --liberal: #5599ff;
+  --behaviorist: #44ee88;
+  --progressive: #ff9933;
+  --humanistic: #cc55ff;
+  --radical: #ff3355;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Press Start 2P', monospace;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(20,10,40,0.8) 0%, transparent 70%),
+    radial-gradient(ellipse at 80% 20%, rgba(10,20,40,0.6) 0%, transparent 70%);
+}
+/* Scanlines */
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+}
+
+/* ═══ SCREENS ═══ */
+.screen { display:none; }
+.screen.active { display:flex; flex-direction:column; min-height:100vh; }
+
+/* ═══ TITLE ═══ */
+#title-screen { align-items:center; justify-content:center; padding:2rem; text-align:center; }
+
+.cave-art {
+  color: #2a2240;
+  font-size: 0.5rem;
+  line-height: 1.15;
+  white-space: pre;
+  font-family: monospace;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 0 8px #5544aa;
+  user-select: none;
+}
+
+.title-wrap { margin-bottom: 3rem; }
+.title-cave { font-size: 0.65rem; color: var(--dim); letter-spacing: 0.3em; margin-bottom: 0.5rem; }
+.title-main { font-size: 1.6rem; color: var(--gold); text-shadow: 0 0 30px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.2); line-height: 1.4; }
+.title-tagline { font-size: 0.48rem; color: #6a5a8a; margin-top: 1rem; letter-spacing: 0.1em; }
+
+.menu-box {
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 0 6px var(--bg), 0 0 0 9px var(--gold), 0 0 30px rgba(255,215,0,0.15), inset 0 0 30px rgba(0,0,0,0.5);
+  padding: 2rem 3rem;
+  background: rgba(0,0,0,0.7);
+  margin-bottom: 1rem;
+}
+.menu-item {
+  font-size: 0.65rem;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.5rem 0;
+  transition: color 0.1s;
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: center;
+}
+.menu-item:hover { color: var(--gold); }
+.menu-item::before { content: '▶ '; color: var(--gold); }
+.menu-copyright { font-size: 0.35rem; color: var(--dim); margin-top: 1.5rem; }
+
+/* blink */
+.blink { animation: blink 1.2s step-end infinite; }
+@keyframes blink { 50%{opacity:0} }
+
+/* ═══ INTRO ═══ */
+#intro-screen {
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.story-box {
+  max-width: 620px;
+  width: 100%;
+  border: 3px solid var(--dim);
+  box-shadow: 0 0 0 6px var(--bg), 0 0 0 9px var(--dim);
+  padding: 2rem;
+  background: rgba(0,0,0,0.7);
+}
+.story-box h2 { font-size: 0.7rem; color: var(--gold); margin-bottom: 1.5rem; }
+.story-text { font-size: 0.48rem; line-height: 2.2; color: #bba888; margin-bottom: 1.5rem; }
+.story-text span { color: var(--gold); }
+
+/* ═══ GAME ═══ */
+#game-screen { flex-direction: row; align-items: stretch; }
+
+.game-main {
+  flex: 1;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: calc(100% - 260px);
+}
+
+.game-sidebar {
+  width: 260px;
+  min-width: 260px;
+  padding: 1.2rem;
+  border-left: 2px solid rgba(255,215,0,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: rgba(0,0,0,0.3);
+}
+
+/* Progress */
+.hud-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,215,0,0.1);
+}
+.hud-room { font-size: 0.45rem; color: var(--dim); }
+.hud-gems { display:flex; gap:3px; flex:1; }
+.gem { width:10px; height:10px; border:1px solid var(--dim); flex-shrink:0; transition: background 0.3s; }
+.gem.done { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 4px var(--gold); }
+.hud-score { font-size: 0.4rem; color: var(--dim); }
+
+/* Room header */
+.room-header { }
+.room-number { font-size: 0.42rem; color: var(--dim); margin-bottom: 0.4rem; }
+.room-name {
+  font-size: 0.9rem;
+  color: var(--gold);
+  text-shadow: 0 0 15px rgba(255,215,0,0.4);
+  margin-bottom: 0.25rem;
+}
+.room-subtitle { font-size: 0.42rem; color: var(--dim); }
+
+/* Room desc */
+.room-desc {
+  font-size: 0.48rem;
+  line-height: 2.2;
+  color: #9988bb;
+  padding: 0.75rem;
+  border-left: 3px solid rgba(148,128,200,0.3);
+  background: rgba(80,60,120,0.05);
+}
+
+/* Scenario */
+.scenario-label { font-size: 0.4rem; color: var(--dim); margin-bottom: 0.4rem; }
+.scenario-text {
+  font-size: 0.5rem;
+  line-height: 2.2;
+  color: var(--text);
+  padding: 0.75rem;
+  border: 1px solid rgba(255,215,0,0.15);
+  background: rgba(255,215,0,0.03);
+}
+
+/* Choices */
+.choices-label { font-size: 0.4rem; color: var(--dim); }
+.choices { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.choice-btn {
+  background: rgba(0,0,0,0.5);
+  border: 2px solid var(--dim);
+  color: var(--text);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  line-height: 1.9;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s;
+  position: relative;
+}
+.choice-btn::before { content: '○  '; color: var(--dim); transition: all 0.12s; }
+.choice-btn:hover { transform: translateX(4px); }
+.choice-btn:hover::before { content: '●  '; }
+.choice-btn[data-orient="Liberal"]:hover { border-color: var(--liberal); color: #fff; box-shadow: 0 0 12px rgba(85,153,255,0.25); }
+.choice-btn[data-orient="Behaviorist"]:hover { border-color: var(--behaviorist); color: #fff; box-shadow: 0 0 12px rgba(68,238,136,0.25); }
+.choice-btn[data-orient="Progressive"]:hover { border-color: var(--progressive); color: #fff; box-shadow: 0 0 12px rgba(255,153,51,0.25); }
+.choice-btn[data-orient="Humanistic"]:hover { border-color: var(--humanistic); color: #fff; box-shadow: 0 0 12px rgba(204,85,255,0.25); }
+.choice-btn[data-orient="Radical"]:hover { border-color: var(--radical); color: #fff; box-shadow: 0 0 12px rgba(255,51,85,0.25); }
+
+/* ═══ SIDEBAR ═══ */
+.sidebar-section { }
+.sidebar-label { font-size: 0.38rem; color: var(--dim); margin-bottom: 0.6rem; letter-spacing: 0.1em; }
+
+/* Character */
+.char-box {
+  background: rgba(0,0,0,0.5);
+  border: 2px solid var(--dim);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0.5rem 0.75rem;
+  position: relative;
+  overflow: hidden;
+}
+.char-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 80%, rgba(255,215,0,0.04) 0%, transparent 70%);
+}
+.char-sprite { font-size: 3.5rem; line-height: 1; margin-bottom: 0.5rem; filter: drop-shadow(0 0 12px var(--gold)); transition: all 0.5s; }
+.char-name { font-size: 0.42rem; color: var(--gold); text-align: center; }
+.char-class { font-size: 0.36rem; color: var(--dim); text-align: center; margin-top: 0.2rem; }
+
+/* Meters */
+.meters { display:flex; flex-direction:column; gap:0.35rem; }
+.meter-row { display:flex; align-items:center; gap:0.4rem; }
+.meter-ico { font-size: 0.7rem; width: 18px; text-align: center; }
+.meter-bar { flex:1; height:6px; background: rgba(255,255,255,0.07); overflow:hidden; }
+.meter-fill { height:100%; transition: width 0.5s ease; min-width: 0; }
+.meter-fill.Liberal { background: var(--liberal); box-shadow: 0 0 6px var(--liberal); }
+.meter-fill.Behaviorist { background: var(--behaviorist); box-shadow: 0 0 6px var(--behaviorist); }
+.meter-fill.Progressive { background: var(--progressive); box-shadow: 0 0 6px var(--progressive); }
+.meter-fill.Humanistic { background: var(--humanistic); box-shadow: 0 0 6px var(--humanistic); }
+.meter-fill.Radical { background: var(--radical); box-shadow: 0 0 6px var(--radical); }
+.meter-val { font-size: 0.35rem; color: var(--dim); width: 14px; text-align: right; }
+
+/* Artifact chips */
+.artifact-chips { display:flex; flex-wrap:wrap; gap:0.35rem; }
+.artifact-chip {
+  font-size: 0.38rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--dim);
+  color: var(--dim);
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.artifact-chip.glow-Liberal { border-color: var(--liberal); color: var(--liberal); box-shadow: 0 0 6px rgba(85,153,255,0.3); }
+.artifact-chip.glow-Behaviorist { border-color: var(--behaviorist); color: var(--behaviorist); box-shadow: 0 0 6px rgba(68,238,136,0.3); }
+.artifact-chip.glow-Progressive { border-color: var(--progressive); color: var(--progressive); box-shadow: 0 0 6px rgba(255,153,51,0.3); }
+.artifact-chip.glow-Humanistic { border-color: var(--humanistic); color: var(--humanistic); box-shadow: 0 0 6px rgba(204,85,255,0.3); }
+.artifact-chip.glow-Radical { border-color: var(--radical); color: var(--radical); box-shadow: 0 0 6px rgba(255,51,85,0.3); }
+
+/* ═══ RESPONSE MODAL ═══ */
+#modal {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88);
+  z-index:500; align-items:center; justify-content:center; padding:2rem;
+}
+#modal.show { display:flex; }
+.modal-box {
+  max-width: 480px; width:100%;
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 0 6px var(--bg), 0 0 0 9px var(--gold), 0 0 40px rgba(255,215,0,0.2);
+  background: rgba(0,0,0,0.95);
+  padding: 2rem;
+  text-align: center;
+  animation: popIn 0.2s ease;
+}
+@keyframes popIn { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
+
+.modal-orient-label { font-size: 0.4rem; letter-spacing: 0.2em; margin-bottom: 0.75rem; }
+.modal-artifact-emoji { font-size: 3.5rem; display:block; margin: 0.5rem 0; filter: drop-shadow(0 0 15px gold); }
+.modal-artifact-name { font-size: 0.75rem; color: var(--gold); margin-bottom: 0.5rem; }
+.modal-artifact-type { font-size: 0.4rem; color: var(--dim); margin-bottom: 1rem; }
+.modal-flavor { font-size: 0.44rem; line-height: 2; color: #9988aa; margin-bottom: 1.5rem; }
+.modal-divider { border: none; border-top: 1px solid var(--dim); margin: 1rem 0; }
+
+.btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  padding: 0.75rem 1.75rem;
+  background: transparent;
+  border: 3px solid var(--gold);
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 0 10px rgba(255,215,0,0.15);
+}
+.btn:hover {
+  background: var(--gold);
+  color: var(--bg);
+  box-shadow: 0 0 25px rgba(255,215,0,0.4);
+}
+.btn-sm { font-size: 0.48rem; padding: 0.5rem 1rem; }
+
+/* ═══ RESULTS ═══ */
+#results-screen { align-items:center; justify-content:flex-start; padding: 2rem 1rem; }
+.results-wrap { max-width: 720px; width:100%; margin: 0 auto; }
+
+.result-reveal {
+  text-align: center;
+  padding: 2.5rem;
+  margin-bottom: 1.5rem;
+  border: 3px solid;
+  box-shadow: 0 0 0 6px var(--bg), 0 0 0 9px;
+  background: rgba(0,0,0,0.7);
+}
+.result-sprite { font-size: 6rem; display:block; margin-bottom: 1rem; filter: drop-shadow(0 0 25px currentColor); }
+.result-tag { font-size: 0.42rem; letter-spacing: 0.2em; margin-bottom: 0.5rem; }
+.result-class { font-size: 1.4rem; margin-bottom: 0.4rem; }
+.result-subtitle { font-size: 0.52rem; }
+
+.result-section {
+  border: 2px solid rgba(255,215,0,0.15);
+  background: rgba(0,0,0,0.4);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.result-section h3 { font-size: 0.48rem; color: var(--dim); letter-spacing: 0.1em; margin-bottom: 1rem; }
+
+.result-desc { font-size: 0.46rem; line-height: 2.2; color: #aa9988; }
+
+.result-score-row { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.6rem; }
+.result-score-ico { font-size: 0.9rem; width: 22px; }
+.result-score-name { font-size: 0.42rem; width: 110px; }
+.result-score-bar { flex:1; height:14px; background:rgba(255,255,255,0.06); overflow:hidden; }
+.result-score-fill { height:100%; transition: width 1.2s ease; }
+.result-score-fill.Liberal { background: var(--liberal); box-shadow: 0 0 8px var(--liberal); }
+.result-score-fill.Behaviorist { background: var(--behaviorist); box-shadow: 0 0 8px var(--behaviorist); }
+.result-score-fill.Progressive { background: var(--progressive); box-shadow: 0 0 8px var(--progressive); }
+.result-score-fill.Humanistic { background: var(--humanistic); box-shadow: 0 0 8px var(--humanistic); }
+.result-score-fill.Radical { background: var(--radical); box-shadow: 0 0 8px var(--radical); }
+.result-score-val { font-size: 0.42rem; width:28px; text-align:right; }
+
+.artifacts-result { display:flex; flex-wrap:wrap; gap:0.5rem; }
+.artifact-result-chip {
+  font-size: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid;
+  display: flex; align-items: center; gap: 5px;
+}
+.artifact-result-chip.Liberal { border-color:var(--liberal); color:var(--liberal); }
+.artifact-result-chip.Behaviorist { border-color:var(--behaviorist); color:var(--behaviorist); }
+.artifact-result-chip.Progressive { border-color:var(--progressive); color:var(--progressive); }
+.artifact-result-chip.Humanistic { border-color:var(--humanistic); color:var(--humanistic); }
+.artifact-result-chip.Radical { border-color:var(--radical); color:var(--radical); }
+
+.results-footer { text-align:center; margin-top:1.5rem; padding-bottom:2rem; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 700px) {
+  #game-screen { flex-direction:column; }
+  .game-main { max-width:100%; }
+  .game-sidebar { width:100%; min-width:unset; border-left:none; border-top:2px solid rgba(255,215,0,0.12); }
+  .title-main { font-size:1.1rem; }
+  .room-name { font-size: 0.7rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ TITLE ═══════════════ -->
+<div id="title-screen" class="screen active">
+  <pre class="cave-art">
+          ████████████████████████████████
+        ██                                ██
+       █    ░░░░░░░    ░░░░░░░    ░░░░░░   █
+      █   ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  █
+      █  ░░  ████  ░░░░  ████  ░░░░  ████ ░░█
+      █  ░   ████   ░░░   ████  ░░░   ████  █
+      █  ░   ████   ░░    ████   ░░   ████  █
+      ██  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ██
+        ██    ░░░░░░░░░░░░░░░░░░░░░░░░   ██
+          ████    ░░░░░░░░░░░░░░░░░░  ████
+              ████████    ░░  ████████
+                      ████████
+  </pre>
+
+  <div class="title-wrap">
+    <div class="title-cave">— ENTER THE —</div>
+    <div class="title-main">CAVE OF<br>LEARNING</div>
+    <div class="title-tagline">A Philosophical Quest · PAEI © 1983/1994 · B.M. Zinn</div>
+  </div>
+
+  <div class="menu-box">
+    <button class="menu-item" onclick="showIntro()">BEGIN QUEST</button>
+    <div style="border-top:1px solid #2a2030; margin: 0.5rem 0;"></div>
+    <div style="font-size:0.4rem; color:var(--dim); line-height:2; text-align:left;">
+      Navigate 15 mystical chambers.<br>
+      Make choices. Collect artifacts.<br>
+      Discover your philosophical class.
+    </div>
+    <div class="menu-copyright">Philosophy of Adult Education Inventory · Lifelong Learning Options</div>
+  </div>
+</div>
+
+<!-- ═══════════════ INTRO ═══════════════ -->
+<div id="intro-screen" class="screen">
+  <div style="display:flex; align-items:center; justify-content:center; flex:1; padding:2rem;">
+    <div class="story-box">
+      <h2>⚔ THE LEGEND BEGINS ⚔</h2>
+      <div class="story-text">
+        The <span>Cave of Learning</span> stretches deep into the mountain — a mystical labyrinth where every chamber holds a different test of wisdom.<br><br>
+        You are an adventurer who has entered this cave to discover your true philosophical identity. In each of the <span>15 chambers</span> ahead, you will face a choice. Your decisions will reveal whether you are...<br><br>
+        🧙 <span>The Sage</span> — keeper of ancient knowledge<br>
+        ⚔️ <span>The Knight</span> — master of discipline<br>
+        🧭 <span>The Ranger</span> — solver of real problems<br>
+        🌿 <span>The Druid</span> — guide of inner growth<br>
+        🔥 <span>The Revolutionary</span> — agent of change<br><br>
+        Choose wisely. Each decision adds artifacts to your pack and shapes the hero you become.
+      </div>
+      <button class="btn" onclick="startGame()">ENTER THE CAVE →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ GAME ═══════════════ -->
+<div id="game-screen" class="screen">
+  <!-- MAIN AREA -->
+  <div class="game-main">
+    <!-- HUD -->
+    <div class="hud-bar">
+      <div class="hud-room" id="hud-room">CHAMBER 1 / 15</div>
+      <div class="hud-gems" id="hud-gems"></div>
+    </div>
+
+    <!-- Room header -->
+    <div class="room-header">
+      <div class="room-number" id="room-number">CHAMBER I</div>
+      <div class="room-name" id="room-name">The Hall of First Steps</div>
+      <div class="room-subtitle" id="room-subtitle">Where every journey begins</div>
+    </div>
+
+    <!-- Atmosphere -->
+    <div class="room-desc" id="room-desc"></div>
+
+    <!-- Scenario -->
+    <div class="scenario-label">⚔ THE CHALLENGE:</div>
+    <div class="scenario-text" id="scenario-text"></div>
+
+    <!-- Choices -->
+    <div class="choices-label">CHOOSE YOUR PATH:</div>
+    <div class="choices" id="choices-container"></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="game-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">YOUR HERO</div>
+      <div class="char-box">
+        <div class="char-sprite" id="char-sprite">🧍</div>
+        <div class="char-name" id="char-name">THE WANDERER</div>
+        <div class="char-class" id="char-class">Awaiting destiny...</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">ORIENTATION POWER</div>
+      <div class="meters" id="meters">
+        <div class="meter-row">
+          <div class="meter-ico">🧙</div>
+          <div class="meter-bar"><div class="meter-fill Liberal" id="m-Liberal" style="width:0%"></div></div>
+          <div class="meter-val" id="v-Liberal">0</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-ico">⚔️</div>
+          <div class="meter-bar"><div class="meter-fill Behaviorist" id="m-Behaviorist" style="width:0%"></div></div>
+          <div class="meter-val" id="v-Behaviorist">0</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-ico">🧭</div>
+          <div class="meter-bar"><div class="meter-fill Progressive" id="m-Progressive" style="width:0%"></div></div>
+          <div class="meter-val" id="v-Progressive">0</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-ico">🌿</div>
+          <div class="meter-bar"><div class="meter-fill Humanistic" id="m-Humanistic" style="width:0%"></div></div>
+          <div class="meter-val" id="v-Humanistic">0</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-ico">🔥</div>
+          <div class="meter-bar"><div class="meter-fill Radical" id="m-Radical" style="width:0%"></div></div>
+          <div class="meter-val" id="v-Radical">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">ARTIFACTS COLLECTED</div>
+      <div class="artifact-chips" id="artifact-chips"></div>
+      <div style="font-size:0.35rem; color:var(--dim); margin-top:0.5rem;" id="no-artifacts">None yet — enter the cave...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL ═══════════════ -->
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-orient-label" id="modal-orient-label">YOU HAVE FOUND:</div>
+    <span class="modal-artifact-emoji" id="modal-emoji">📜</span>
+    <div class="modal-artifact-name" id="modal-name">Ancient Scroll</div>
+    <div class="modal-artifact-type" id="modal-type">Artifact of the Sage</div>
+    <hr class="modal-divider">
+    <div class="modal-flavor" id="modal-flavor">The ancient texts illuminate the way.</div>
+    <button class="btn btn-sm" id="modal-continue-btn">CONTINUE →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ RESULTS ═══════════════ -->
+<div id="results-screen" class="screen">
+  <div class="results-wrap">
+    <!-- Class Reveal -->
+    <div class="result-reveal" id="result-reveal">
+      <span class="result-sprite" id="result-sprite">🧙</span>
+      <div class="result-tag" id="result-tag">YOUR PHILOSOPHICAL CLASS</div>
+      <div class="result-class" id="result-class">THE SAGE</div>
+      <div class="result-subtitle" id="result-subtitle">Liberal · Keeper of Ancient Wisdom</div>
+    </div>
+
+    <!-- Description -->
+    <div class="result-section">
+      <h3>▸ YOUR PHILOSOPHY</h3>
+      <div class="result-desc" id="result-desc"></div>
+    </div>
+
+    <!-- Scores -->
+    <div class="result-section">
+      <h3>▸ POWER LEVELS</h3>
+      <div id="result-scores"></div>
+    </div>
+
+    <!-- Artifacts -->
+    <div class="result-section">
+      <h3>▸ ARTIFACTS COLLECTED</h3>
+      <div class="artifacts-result" id="result-artifacts"></div>
+    </div>
+
+    <div class="results-footer">
+      <button class="btn btn-sm" onclick="restartGame()">↩ PLAY AGAIN</button>
+      <button class="btn btn-sm" onclick="showTitle()">⌂ TITLE SCREEN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  GAME DATA — loaded from game_content.js
+// ══════════════════════════════════════════════════════════════
+
+if (!window.GAME_CONTENT) {
+  alert('ERROR: game_content.js failed to load.\nMake sure both files are in the same folder.');
+}
+
+const C          = window.GAME_CONTENT;
+const UI         = C.UI;
+const ORIENTATIONS = C.ORIENTATIONS;
+const ARTIFACTS  = C.ARTIFACTS;
+const ROOMS      = C.ROOMS;
+
+// ══════════════════════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════════════════════
+
+let state = {
+  room: 0,
+  scores: { Liberal:0, Behaviorist:0, Progressive:0, Humanistic:0, Radical:0 },
+  collectedArtifacts: [],  // [{ orient, ...artifactObj }]
+  artifactCounts: { Liberal:0, Behaviorist:0, Progressive:0, Humanistic:0, Radical:0 }
+};
+
+// ══════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════════
+
+// ── Populate static UI from content file ──
+function populateUI() {
+  // Title screen
+  document.querySelector('.title-cave').textContent  = UI.titlePre;
+  document.querySelector('.title-main').innerHTML    = UI.titleMain.replace('\n', '<br>');
+  document.querySelector('.title-tagline').textContent = UI.titleTagline;
+  document.querySelector('.menu-item').textContent   = UI.menuStart;
+  document.querySelector('.menu-copyright').textContent = UI.menuCopyright;
+  const menuDesc = document.querySelector('.menu-box div[style]');
+  if (menuDesc) menuDesc.innerHTML = UI.menuDesc.replace(/\n/g, '<br>');
+
+  // Intro screen
+  document.querySelector('.story-box h2').textContent = UI.introTitle;
+  const storyText = document.querySelector('.story-text');
+  storyText.innerHTML = UI.introBody.replace(/\n/g, '<br>');
+  document.querySelector('.story-box .btn').textContent = UI.introBtnLabel;
+
+  // Sidebar labels
+  document.querySelectorAll('.sidebar-label')[0].textContent = UI.sideHero;
+  document.getElementById('char-name').textContent           = UI.sideCharDefault;
+  document.getElementById('char-class').textContent          = UI.sideCharSub;
+  document.querySelectorAll('.sidebar-label')[1].textContent = UI.sidePower;
+  document.querySelectorAll('.sidebar-label')[2].textContent = UI.sideArtifacts;
+  document.getElementById('no-artifacts').textContent        = UI.sideNoArtifacts;
+
+  // Challenge / choices labels
+  document.querySelector('.scenario-label').textContent = UI.challengeLabel;
+  document.querySelector('.choices-label').textContent  = UI.choicesLabel;
+
+  // Results labels
+  document.getElementById('result-tag').textContent = UI.resultsTag;
+  document.querySelectorAll('.result-section h3')[0].textContent = UI.resultsSectionPhilosophy;
+  document.querySelectorAll('.result-section h3')[1].textContent = UI.resultsSectionPower;
+  document.querySelectorAll('.result-section h3')[2].textContent = UI.resultsSectionArtifacts;
+  document.querySelectorAll('.results-footer .btn')[0].textContent = UI.resultsBtnReplay;
+  document.querySelectorAll('.results-footer .btn')[1].textContent = UI.resultsBtnTitle;
+}
+
+document.addEventListener('DOMContentLoaded', populateUI);
+
+function showTitle() {
+  setScreen('title-screen');
+}
+function showIntro() {
+  setScreen('intro-screen');
+}
+function startGame() {
+  state = { room:0, scores:{Liberal:0,Behaviorist:0,Progressive:0,Humanistic:0,Radical:0}, collectedArtifacts:[], artifactCounts:{Liberal:0,Behaviorist:0,Progressive:0,Humanistic:0,Radical:0} };
+  setScreen('game-screen');
+  renderRoom(0);
+}
+function restartGame() {
+  startGame();
+}
+
+function setScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ROOM RENDERING
+// ══════════════════════════════════════════════════════════════
+
+const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
+
+function renderRoom(idx) {
+  const room = ROOMS[idx];
+  document.getElementById('hud-room').textContent = `CHAMBER ${idx+1} / 15`;
+  document.getElementById('room-number').textContent = `CHAMBER ${ROMAN[idx]}`;
+  document.getElementById('room-name').textContent = room.name;
+  document.getElementById('room-subtitle').textContent = room.subtitle;
+  document.getElementById('room-desc').textContent = room.desc;
+  document.getElementById('scenario-text').textContent = room.scenario;
+
+  // Gems
+  const gemsEl = document.getElementById('hud-gems');
+  gemsEl.innerHTML = '';
+  for (let i = 0; i < 15; i++) {
+    const g = document.createElement('div');
+    g.className = 'gem' + (i < idx ? ' done' : '');
+    gemsEl.appendChild(g);
+  }
+
+  // Choices (shuffle order each room)
+  const choices = [...room.choices];
+  const container = document.getElementById('choices-container');
+  container.innerHTML = '';
+  choices.forEach((c, ci) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.dataset.orient = c.orient;
+    btn.textContent = c.text;
+    btn.onclick = () => makeChoice(idx, c.orient);
+    container.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CHOICE HANDLING
+// ══════════════════════════════════════════════════════════════
+
+function makeChoice(roomIdx, orient) {
+  // Disable all buttons
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
+  // Update scores
+  state.scores[orient]++;
+  state.room = roomIdx + 1;
+
+  // Award artifact
+  const count = state.artifactCounts[orient];
+  const artifactPool = ARTIFACTS[orient];
+  const artifact = artifactPool[count % artifactPool.length];
+  state.artifactCounts[orient]++;
+  state.collectedArtifacts.push({ ...artifact, orient });
+
+  // Show modal
+  showModal(orient, artifact, roomIdx);
+}
+
+function showModal(orient, artifact, roomIdx) {
+  const o = ORIENTATIONS[orient];
+  const modal = document.getElementById('modal');
+
+  document.getElementById('modal-orient-label').textContent = UI.modalFoundLabel.replace('{ORIENT}', orient.toUpperCase());
+  document.getElementById('modal-orient-label').style.color = o.color;
+  document.getElementById('modal-emoji').textContent = artifact.emoji;
+  document.getElementById('modal-name').textContent = artifact.name;
+  document.getElementById('modal-type').textContent = UI.modalArtifactType.replace('{CLASS}', o.name);
+  document.getElementById('modal-type').style.color = o.color;
+  document.getElementById('modal-flavor').textContent = artifact.flavor;
+
+  const nextRoom = roomIdx + 1;
+  const btn = document.getElementById('modal-continue-btn');
+  if (nextRoom >= ROOMS.length) {
+    btn.textContent = UI.modalFinalLabel;
+    btn.onclick = () => { closeModal(); showResults(); };
+  } else {
+    btn.textContent = UI.modalContinueLabel.replace('{NUM}', ROMAN[nextRoom]);
+    btn.onclick = () => { closeModal(); renderRoom(nextRoom); updateSidebar(); };
+  }
+
+  modal.classList.add('show');
+  updateSidebar();
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SIDEBAR
+// ══════════════════════════════════════════════════════════════
+
+function updateSidebar() {
+  const scores = state.scores;
+  const maxScore = Math.max(...Object.values(scores));
+  const total = Object.values(scores).reduce((a,b)=>a+b,0) || 1;
+
+  // Leading orientation
+  let leadOrient = Object.keys(scores).find(k => scores[k] === maxScore) || 'Liberal';
+
+  // Character sprite
+  const o = ORIENTATIONS[leadOrient];
+  document.getElementById('char-sprite').textContent = o.sprite;
+  document.getElementById('char-name').textContent = o.name;
+  document.getElementById('char-class').textContent = o.subtitle.split(' · ')[1] || '';
+
+  // Meters
+  Object.keys(scores).forEach(name => {
+    const pct = (scores[name] / 15 * 100).toFixed(0);
+    document.getElementById('m-' + name).style.width = pct + '%';
+    document.getElementById('v-' + name).textContent = scores[name];
+  });
+
+  // Artifacts
+  const chipsEl = document.getElementById('artifact-chips');
+  const noArt = document.getElementById('no-artifacts');
+  chipsEl.innerHTML = '';
+  if (state.collectedArtifacts.length === 0) {
+    noArt.style.display = 'block';
+  } else {
+    noArt.style.display = 'none';
+    state.collectedArtifacts.slice(-8).forEach(art => {
+      const chip = document.createElement('div');
+      chip.className = `artifact-chip glow-${art.orient}`;
+      chip.textContent = art.emoji + ' ' + art.name;
+      chipsEl.appendChild(chip);
+    });
+    if (state.collectedArtifacts.length > 8) {
+      const more = document.createElement('div');
+      more.className = 'artifact-chip';
+      more.textContent = `+${state.collectedArtifacts.length - 8} more`;
+      chipsEl.appendChild(more);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════════════════════════════════
+
+function showResults() {
+  setScreen('results-screen');
+
+  const scores = state.scores;
+  const maxScore = Math.max(...Object.values(scores));
+  const topName = Object.keys(scores).sort((a,b)=>scores[b]-scores[a])[0];
+  const o = ORIENTATIONS[topName];
+
+  // Reveal
+  const revealEl = document.getElementById('result-reveal');
+  revealEl.style.borderColor = o.color;
+  revealEl.style.boxShadow = `0 0 0 6px var(--bg), 0 0 0 9px ${o.color}, 0 0 40px ${o.color}40`;
+  document.getElementById('result-sprite').textContent = o.sprite;
+  document.getElementById('result-sprite').style.color = o.color;
+  document.getElementById('result-tag').textContent = UI.resultsTag;
+  document.getElementById('result-tag').style.color = o.color;
+  document.getElementById('result-class').textContent = o.name;
+  document.getElementById('result-class').style.color = o.color;
+  document.getElementById('result-subtitle').textContent = o.subtitle;
+  document.getElementById('result-subtitle').style.color = o.color;
+
+  // Desc
+  document.getElementById('result-desc').textContent = o.desc;
+  document.getElementById('result-desc').style.borderLeftColor = o.color;
+
+  // Scores — sorted
+  const scoresEl = document.getElementById('result-scores');
+  scoresEl.innerHTML = '';
+  Object.keys(scores).sort((a,b)=>scores[b]-scores[a]).forEach(name => {
+    const oo = ORIENTATIONS[name];
+    const pct = (scores[name] / 15 * 100).toFixed(0);
+    const row = document.createElement('div');
+    row.className = 'result-score-row';
+    row.innerHTML = `
+      <div class="result-score-ico">${oo.sprite}</div>
+      <div class="result-score-name" style="color:${oo.color}">${name}</div>
+      <div class="result-score-bar">
+        <div class="result-score-fill ${name}" style="width:0%" data-pct="${pct}"></div>
+      </div>
+      <div class="result-score-val">${scores[name]}/15</div>
+    `;
+    scoresEl.appendChild(row);
+  });
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.result-score-fill').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }, 100);
+
+  // Artifacts
+  const artEl = document.getElementById('result-artifacts');
+  artEl.innerHTML = '';
+  state.collectedArtifacts.forEach(art => {
+    const chip = document.createElement('div');
+    chip.className = `artifact-result-chip ${art.orient}`;
+    chip.innerHTML = `${art.emoji} ${art.name}`;
+    artEl.appendChild(chip);
+  });
+}
+</script>
+</body>
+</html>
